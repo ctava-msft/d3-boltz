@@ -83,10 +83,10 @@ cp boltzdesign/boltzdesign_utils.py boltzdesign/boltzdesign_utils.py.backup.bolt
 
 # Update the import
 if grep -q "from boltz.model.model import Boltz1" boltzdesign/boltzdesign_utils.py; then
-    sed -i 's/from boltz\.model\.model import Boltz1/from boltzdesign.boltz2_compat import Boltz1/g' boltzdesign/boltzdesign_utils.py
+    sed -i 's/from boltz\.model\.model import Boltz1/from boltz2_compat import Boltz1/g' boltzdesign/boltzdesign_utils.py
     echo "✓ Updated import in boltzdesign_utils.py"
 elif grep -q "from boltz.model.models.boltz1 import Boltz1" boltzdesign/boltzdesign_utils.py; then
-    sed -i 's/from boltz\.model\.models\.boltz1 import Boltz1/from boltzdesign.boltz2_compat import Boltz1/g' boltzdesign/boltzdesign_utils.py
+    sed -i 's/from boltz\.model\.models\.boltz1 import Boltz1/from boltz2_compat import Boltz1/g' boltzdesign/boltzdesign_utils.py
     echo "✓ Updated import in boltzdesign_utils.py"
 else
     echo "⚠ Could not find Boltz1 import to update"
@@ -103,7 +103,8 @@ python3 << 'EOFTEST'
 try:
     import sys
     sys.path.insert(0, '/home/azureuser/localfiles/d3-boltz/BoltzDesign1')
-    from boltzdesign.boltz2_compat import Boltz1
+    sys.path.insert(0, '/home/azureuser/localfiles/d3-boltz/BoltzDesign1/boltzdesign')
+    from boltz2_compat import Boltz1
     print("✓ Compatibility wrapper imports successfully")
     print(f"✓ Boltz1 class: {Boltz1}")
 except Exception as e:
