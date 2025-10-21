@@ -1,0 +1,278 @@
+#!/bin/bash
+# Troubleshooting and manual setup for BoltzDesign1
+# Run this if linux_setup.sh fails
+
+set -e
+
+echo "=== BoltzDesign1 Manual Setup ==="
+echo ""
+
+# Check if we're in the right directory
+if [ ! -f "linux_setup.sh" ]; then
+    echo "ERROR: Please run this from the d3-boltz directory"
+    exit 1
+fi
+
+# Activate virtual environment
+if [ ! -d "boltz_venv" ]; then
+    echo "ERROR: Virtual environment not found. Run linux_setup.sh first to create it."
+    exit 1
+fi
+
+source boltz_venv/bin/activate
+echo "✓ Virtual environment activated"
+
+# Clone BoltzDesign1 if not present
+if [ ! -d "BoltzDesign1" ]; then
+    echo "Cloning BoltzDesign1 repository..."
+    git clone https://github.com/yehlincho/BoltzDesign1.git
+    echo "✓ BoltzDesign1 cloned"
+else
+    echo "✓ BoltzDesign1 directory exists"
+fi
+
+# Check if boltzdesign.py exists
+if [ ! -f "BoltzDesign1/boltzdesign.py" ]; then
+    echo "ERROR: boltzdesign.py not found in BoltzDesign1 directory"
+    echo "The repository may be incomplete. Try removing and re-cloning:"
+    echo "  rm -rf BoltzDesign1"
+    echo "  git clone https://github.com/yehlincho/BoltzDesign1.git"
+    exit 1
+fi
+echo "✓ boltzdesign.py found"
+
+# Create BioPython ProDy patch
+echo "Creating BioPython ProDy patch..."
+cat > BoltzDesign1/LigandMPNN/prody_biopython_patch.py << 'EOFPATCH'
+"""
+BioPython-based replacement for ProDy functionality.
+This avoids the need for C++ compiler to install ProDy.
+"""
+from Bio.PDB import PDBParser, PDBIO, Structure, Model, Chain, Residue, Atom
+import numpy as np
+
+def confProDy(**kwargs):
+    """Dummy function to replace ProDy's confProDy"""
+    pass
+
+def parsePDB(filename):
+    """Parse PDB file using BioPython"""
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure('structure', filename)
+    return structure
+
+class AtomGroup:
+    """Mimic ProDy's AtomGroup using BioPython"""
+    def __init__(self):
+        self._coords = None
+        self._betas = None
+        self._names = None
+        self._resnames = None
+        self._elements = None
+        self._occupancies = None
+        self._resnums = None
+        self._chids = None
+        self._icodes = None
+        self._flags = None
+        self._structure = Structure.Structure('structure')
+        self._model = Model.Model(0)
+        self._structure.add(self._model)
+    
+    def setCoords(self, coords):
+        self._coords = np.array(coords)
+    
+    def getCoords(self):
+        return self._coords
+    
+    def setBetas(self, betas):
+        self._betas = np.array(betas)
+    
+    def getBetas(self):
+        return self._betas
+    
+    def setNames(self, names):
+        self._names = names
+    
+    def getNames(self):
+        return self._names
+    
+    def setResnames(self, resnames):
+        self._resnames = resnames
+    
+    def getResnames(self):
+        return self._resnames
+    
+    def setElements(self, elements):
+        self._elements = elements
+    
+    def getElements(self):
+        return self._elements
+    
+    def setOccupancies(self, occupancies):
+        self._occupancies = np.array(occupancies)
+    
+    def getOccupancies(self):
+        return self._occupancies
+    
+    def setResnums(self, resnums):
+        self._resnums = np.array(resnums)
+    
+    def getResnums(self):
+        return self._resnums
+    
+    def setChids(self, chids):
+        self._chids = chids
+    
+    def getChids(self):
+        return self._chids
+    
+    def setIcodes(self, icodes):
+        self._icodes = icodes
+    
+    def getIcodes(self):
+        return self._icodes
+    
+    def setFlags(self, flags_key, flags_value):
+        if self._flags is None:
+            self._flags = {}
+        self._flags[flags_key] = flags_value
+    
+    def getFlags(self, flags_key):
+        if self._flags is None:
+            return None
+        return self._flags.get(flags_key)
+    
+    def __add__(self, other):
+        """Combine two AtomGroups"""
+        combined = AtomGroup()
+        if self._coords is not None and other._coords is not None:
+            combined._coords = np.concatenate([self._coords, other._coords])
+        if self._betas is not None and other._betas is not None:
+            combined._betas = np.concatenate([self._betas, other._betas])
+        return combined
+
+def writePDB(filename, structure):
+    """Write PDB file using BioPython"""
+    structure = _prody_to_biopython(structure)
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(filename)
+
+def _prody_to_biopython(prody_obj):
+    """Convert ProDy-like object to BioPython Structure"""
+    if isinstance(prody_obj, AtomGroup):
+        structure = Structure.Structure('structure')
+        model = Model.Model(0)
+        structure.add(model)
+        
+        coords = prody_obj.getCoords()
+        names = prody_obj.getNames() if prody_obj.getNames() is not None else ['CA'] * len(coords)
+        resnames = prody_obj.getResnames() if prody_obj.getResnames() is not None else ['ALA'] * len(coords)
+        resnums = prody_obj.getResnums() if prody_obj.getResnums() is not None else list(range(1, len(coords) + 1))
+        chids = prody_obj.getChids() if prody_obj.getChids() is not None else ['A'] * len(coords)
+        elements = prody_obj.getElements() if prody_obj.getElements() is not None else ['C'] * len(coords)
+        betas = prody_obj.getBetas() if prody_obj.getBetas() is not None else [0.0] * len(coords)
+        occupancies = prody_obj.getOccupancies() if prody_obj.getOccupancies() is not None else [1.0] * len(coords)
+        
+        current_chain = None
+        current_residue = None
+        current_chain_id = None
+        current_resnum = None
+        
+        for i in range(len(coords)):
+            chain_id = chids[i]
+            resnum = int(resnums[i])
+            
+            if chain_id != current_chain_id:
+                current_chain = Chain.Chain(chain_id)
+                model.add(current_chain)
+                current_chain_id = chain_id
+                current_resnum = None
+            
+            if resnum != current_resnum:
+                current_residue = Residue.Residue((' ', resnum, ' '), resnames[i], '')
+                current_chain.add(current_residue)
+                current_resnum = resnum
+            
+            atom = Atom.Atom(names[i], coords[i], betas[i], occupancies[i], ' ', names[i], i, element=elements[i])
+            current_residue.add(atom)
+        
+        return structure
+    
+    return prody_obj
+EOFPATCH
+echo "✓ BioPython patch created"
+
+# Patch boltzdesign.py
+echo "Patching boltzdesign.py..."
+cd BoltzDesign1
+
+# Create backup
+if [ ! -f "boltzdesign.py.backup" ]; then
+    cp boltzdesign.py boltzdesign.py.backup
+    echo "✓ Backup created"
+fi
+
+# Check if patches are already applied
+if grep -q "Auto-detect single chain case" boltzdesign.py; then
+    echo "✓ Patches already applied"
+else
+    echo "Applying patches..."
+    
+    # Patch 1: Auto-detect single chain
+    python3 << 'EOFPYTHON'
+import sys
+
+with open('boltzdesign.py', 'r') as f:
+    content = f.read()
+
+# Find the line to patch after
+search_str = "pdb_target_ids = [str(x.strip()) for x in args.pdb_target_ids.split(\",\")] if args.pdb_target_ids else None"
+
+if search_str in content:
+    patch = """
+        # Auto-detect single chain case
+        if pdb_target_ids is None and args.input_type == "pdb":
+            try:
+                from boltzdesign.input_utils import get_chains_sequence
+                chain_sequences = get_chains_sequence(pdb_path)
+                if len(chain_sequences) == 1:
+                    pdb_target_ids = list(chain_sequences.keys())
+                    print(f"Auto-detected single chain: {pdb_target_ids}")
+            except Exception as e:
+                print(f"Could not auto-detect chain: {e}")
+                pass"""
+    
+    content = content.replace(search_str, search_str + patch)
+    
+    # Patch 2: Fix boltz path
+    search_str2 = 'boltz_path = shutil.which("boltz")'
+    if search_str2 in content:
+        patch2 = '''boltz_path = shutil.which("boltz")
+    if boltz_path is None:
+        # Try to find boltz in the virtual environment
+        import sys
+        venv_boltz = os.path.join(os.path.dirname(sys.executable), "boltz")
+        if os.path.exists(venv_boltz):
+            boltz_path = venv_boltz
+        else:'''
+        content = content.replace(search_str2, patch2)
+    
+    with open('boltzdesign.py', 'w') as f:
+        f.write(content)
+    
+    print("✓ Patches applied")
+else:
+    print("WARNING: Could not find patch location in boltzdesign.py")
+    print("File may have been updated. Please check manually.")
+EOFPYTHON
+fi
+
+cd ..
+
+echo ""
+echo "=== Setup Complete ==="
+echo ""
+echo "You can now run:"
+echo "  ./run_binder_gpu.sh"
+echo ""
