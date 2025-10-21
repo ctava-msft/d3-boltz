@@ -76,13 +76,19 @@ class Boltz1(OriginalBoltz1):
                 if removed:
                     print(f"Filtered confidence_model_args: removed {removed}")
             
-            # Also check if confidence_args exists and filter it
+            # Filter confidence_args (passed to ConfidenceHeads)
             if 'confidence_args' in hp:
                 confidence_args = hp['confidence_args']
-                # This is typically passed to something else, but filter common deprecated ones
-                deprecated_confidence = ['use_gaussian', 'use_gaussian_filter']
-                filtered = {k: v for k, v in confidence_args.items() if k not in deprecated_confidence}
-                removed = [k for k in confidence_args.keys() if k in deprecated_confidence]
+                
+                # List of parameters accepted by ConfidenceHeads.__init__
+                # Based on boltz/model/modules/confidence.py ConfidenceHeads class
+                accepted_confidence_head_params = {
+                    'num_plddt_bins', 'num_pde_bins', 'num_pae_bins', 'compute_pae'
+                }
+                
+                # Filter to only accepted parameters
+                filtered = {k: v for k, v in confidence_args.items() if k in accepted_confidence_head_params}
+                removed = [k for k in confidence_args.keys() if k not in accepted_confidence_head_params]
                 hp['confidence_args'] = filtered
                 if removed:
                     print(f"Filtered confidence_args: removed {removed}")
