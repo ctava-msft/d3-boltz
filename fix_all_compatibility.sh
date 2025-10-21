@@ -59,8 +59,26 @@ class Boltz1(OriginalBoltz1):
             if 'confidence_model_args' in hp:
                 confidence_model_args = hp['confidence_model_args']
                 
+                # First, filter the nested confidence_args if it exists
+                if 'confidence_args' in confidence_model_args:
+                    nested_confidence_args = confidence_model_args['confidence_args']
+                    
+                    # List of parameters accepted by ConfidenceHeads.__init__
+                    accepted_confidence_head_params = {
+                        'num_plddt_bins', 'num_pde_bins', 'num_pae_bins', 'compute_pae'
+                    }
+                    
+                    filtered_nested = {k: v for k, v in nested_confidence_args.items() 
+                                      if k in accepted_confidence_head_params}
+                    removed_nested = [k for k in nested_confidence_args.keys() 
+                                     if k not in accepted_confidence_head_params]
+                    
+                    confidence_model_args['confidence_args'] = filtered_nested
+                    
+                    if removed_nested:
+                        print(f"Filtered nested confidence_args: removed {removed_nested}")
+                
                 # List of parameters accepted by ConfidenceModule.__init__
-                # Based on boltz/model/modules/confidence.py
                 accepted_params = {
                     'pairformer_args', 'num_dist_bins', 'max_dist', 
                     'add_s_to_z_prod', 'add_s_input_to_s', 'use_s_diffusion',
@@ -76,12 +94,11 @@ class Boltz1(OriginalBoltz1):
                 if removed:
                     print(f"Filtered confidence_model_args: removed {removed}")
             
-            # Filter confidence_args (passed to ConfidenceHeads)
+            # Also filter top-level confidence_args if it exists separately
             if 'confidence_args' in hp:
                 confidence_args = hp['confidence_args']
                 
                 # List of parameters accepted by ConfidenceHeads.__init__
-                # Based on boltz/model/modules/confidence.py ConfidenceHeads class
                 accepted_confidence_head_params = {
                     'num_plddt_bins', 'num_pde_bins', 'num_pae_bins', 'compute_pae'
                 }
@@ -91,7 +108,7 @@ class Boltz1(OriginalBoltz1):
                 removed = [k for k in confidence_args.keys() if k not in accepted_confidence_head_params]
                 hp['confidence_args'] = filtered
                 if removed:
-                    print(f"Filtered confidence_args: removed {removed}")
+                    print(f"Filtered top-level confidence_args: removed {removed}")
         
         # Save the filtered checkpoint temporarily
         import tempfile
