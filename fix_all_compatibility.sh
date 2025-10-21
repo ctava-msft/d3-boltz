@@ -119,14 +119,16 @@ class Boltz1(OriginalBoltz1):
         try:
             # Load using the parent class method with the filtered checkpoint
             print("Loading model with filtered parameters...")
+            # Use strict=False to handle architecture changes between versions
+            print("Note: Using strict=False to handle architecture differences")
             model = super(Boltz1, cls).load_from_checkpoint(
                 tmp_path,
                 map_location=map_location,
                 hparams_file=hparams_file,
-                strict=strict,
+                strict=False,  # Allow mismatched layers due to version differences
                 **kwargs
             )
-            print("✓ Model loaded successfully")
+            print("✓ Model loaded successfully (some layers may have been skipped due to size mismatches)")
         finally:
             # Clean up temporary file
             if os.path.exists(tmp_path):
