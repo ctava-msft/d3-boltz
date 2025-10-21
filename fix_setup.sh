@@ -245,7 +245,53 @@ def _prody_to_biopython(prody_obj):
 EOFPATCH
 echo "✓ BioPython patch created"
 
-# Patch boltzdesign.py
+# Patch all files that use ProDy
+echo "Patching ProDy imports..."
+cd BoltzDesign1
+
+# Patch ligandmpnn_utils.py
+if [ -f "LigandMPNN/ligandmpnn_utils.py" ]; then
+    if ! grep -q "prody_biopython_patch" LigandMPNN/ligandmpnn_utils.py; then
+        cp LigandMPNN/ligandmpnn_utils.py LigandMPNN/ligandmpnn_utils.py.backup
+        sed -i 's/from prody import/from prody_biopython_patch import/g' LigandMPNN/ligandmpnn_utils.py
+        sed -i 's/import prody/import prody_biopython_patch as prody/g' LigandMPNN/ligandmpnn_utils.py
+        echo "✓ Patched ligandmpnn_utils.py"
+    fi
+fi
+
+# Patch run.py
+if [ -f "LigandMPNN/run.py" ]; then
+    if ! grep -q "prody_biopython_patch" LigandMPNN/run.py; then
+        cp LigandMPNN/run.py LigandMPNN/run.py.backup
+        sed -i 's/from prody import/from prody_biopython_patch import/g' LigandMPNN/run.py
+        sed -i 's/import prody/import prody_biopython_patch as prody/g' LigandMPNN/run.py
+        echo "✓ Patched run.py"
+    fi
+fi
+
+# Patch data_utils.py
+if [ -f "boltzdesign/data_utils.py" ]; then
+    if ! grep -q "prody_biopython_patch" boltzdesign/data_utils.py; then
+        cp boltzdesign/data_utils.py boltzdesign/data_utils.py.backup
+        sed -i 's/from prody import/from prody_biopython_patch import/g' boltzdesign/data_utils.py
+        sed -i 's/import prody/import prody_biopython_patch as prody/g' boltzdesign/data_utils.py
+        echo "✓ Patched data_utils.py"
+    fi
+fi
+
+# Patch input_utils.py
+if [ -f "boltzdesign/input_utils.py" ]; then
+    if ! grep -q "prody_biopython_patch" boltzdesign/input_utils.py; then
+        cp boltzdesign/input_utils.py boltzdesign/input_utils.py.backup
+        sed -i 's/from prody import/from prody_biopython_patch import/g' boltzdesign/input_utils.py
+        sed -i 's/import prody/import prody_biopython_patch as prody/g' boltzdesign/input_utils.py
+        echo "✓ Patched input_utils.py"
+    fi
+fi
+
+cd ..
+
+# Now patch boltzdesign.py
 echo "Patching boltzdesign.py..."
 cd BoltzDesign1
 
