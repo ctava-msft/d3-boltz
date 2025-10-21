@@ -1,0 +1,36 @@
+--- boltzdesign.py.orig	2025-10-21 22:00:00.000000000 +0000
++++ boltzdesign.py	2025-10-21 22:10:00.000000000 +0000
+@@ -385,6 +385,14 @@
+         # Execute Boltz Structure Prediction
+         for sample_name in binder_names:
+             boltz_path = shutil.which("boltz")
++            if boltz_path is None:
++                # Try to find boltz in the virtual environment
++                import sys
++                venv_boltz = os.path.join(os.path.dirname(sys.executable), "boltz")
++                if os.path.exists(venv_boltz):
++                    boltz_path = venv_boltz
++            
++            # Keep the original error check
+             if boltz_path is None:
+                 raise FileNotFoundError(
+                     "The 'boltz' command was not found in the system PATH. "
+@@ -652,6 +660,18 @@
+         pdb_target_ids = [str(x.strip()) for x in args.pdb_target_ids.split(",")] if args.pdb_target_ids else None
+     else:
+         pdb_target_ids = None
++    
++    # Auto-detect single chain case
++    if pdb_target_ids is None and args.input_type == "pdb":
++        try:
++            from boltzdesign.input_utils import get_chains_sequence
++            chain_sequences = get_chains_sequence(pdb_path)
++            if len(chain_sequences) == 1:
++                pdb_target_ids = list(chain_sequences.keys())
++                print(f"Auto-detected single chain: {pdb_target_ids}")
++        except Exception as e:
++            print(f"Could not auto-detect chain: {e}")
++            pass
+ 
+     if args.skip_validation:
+         print("Skipping validation...")

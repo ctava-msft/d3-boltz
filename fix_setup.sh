@@ -333,17 +333,18 @@ if search_str in content:
     
     content = content.replace(search_str, search_str + patch)
     
-    # Patch 2: Fix boltz path
-    search_str2 = 'boltz_path = shutil.which("boltz")'
+    # Patch 2: Fix boltz path - find the existing error handling
+    # We need to add code BEFORE the existing error, not replace it
+    search_str2 = 'if boltz_path is None:\n            raise FileNotFoundError'
     if search_str2 in content:
-        patch2 = '''boltz_path = shutil.which("boltz")
-    if boltz_path is None:
-        # Try to find boltz in the virtual environment
-        import sys
-        venv_boltz = os.path.join(os.path.dirname(sys.executable), "boltz")
-        if os.path.exists(venv_boltz):
-            boltz_path = venv_boltz
-        else:'''
+        patch2 = '''if boltz_path is None:
+            # Try to find boltz in the virtual environment
+            import sys
+            venv_boltz = os.path.join(os.path.dirname(sys.executable), "boltz")
+            if os.path.exists(venv_boltz):
+                boltz_path = venv_boltz
+        if boltz_path is None:
+            raise FileNotFoundError'''
         content = content.replace(search_str2, patch2)
     
     with open('boltzdesign.py', 'w') as f:
