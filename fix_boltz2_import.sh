@@ -27,6 +27,10 @@ class Boltz1(OriginalBoltz1):
         """
         Load checkpoint with compatibility filtering.
         """
+        # Expand user path (e.g., ~/.boltz/boltz1_conf.ckpt)
+        import os
+        checkpoint_path = os.path.expanduser(checkpoint_path)
+        
         # Load the checkpoint
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
         

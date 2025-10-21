@@ -54,3 +54,29 @@ This allows the compatibility wrapper to filter out deprecated parameters when l
 
 ## Files Backed Up
 The script creates `boltzdesign_utils.py.backup.original` before making changes.
+
+## Path Expansion Issue (Update)
+
+### Additional Problem Found
+The checkpoint path `~/.boltz/boltz1_conf.ckpt` wasn't being expanded, causing:
+```
+FileNotFoundError: [Errno 2] No such file or directory: '~/.boltz/boltz1_conf.ckpt'
+```
+
+### Additional Fix
+Created `patch_boltz2_path.sh` to add path expansion to `boltz2_compat.py`:
+- Adds `os.path.expanduser(checkpoint_path)` before loading the checkpoint
+- Creates backup before patching
+
+### Usage After Initial Fix
+If you already ran `fix_boltz2_import.sh` and got the path error:
+
+```bash
+cd ~/localfiles/d3-boltz
+chmod +x patch_boltz2_path.sh
+./patch_boltz2_path.sh
+./run_binder_gpu.sh
+```
+
+### Complete Fresh Install
+For a fresh setup, just run `fix_boltz2_import.sh` (it includes the path expansion fix).
