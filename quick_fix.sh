@@ -52,25 +52,38 @@ while i < len(lines):
         boltz_path_patched = True
         continue
     
-    # Patch 2: Add chain auto-detection (after pdb_target_ids = None)
-    if not chain_detect_patched and 'pdb_target_ids = None' in line and 'else:' in lines[i-1]:
+    # Patch 2: Add chain auto-detection (look for the pdb_target_ids assignment)
+    # Match the line that sets pdb_target_ids based on args.pdb_target_ids
+    if not chain_detect_patched and 'pdb_target_ids = [str(x.strip()) for x in args.pdb_target_ids.split' in line:
         new_lines.append(line)
         i += 1
-        # Add auto-detection code
-        indent = '    '
-        new_lines.append(f'{indent}\n')
-        new_lines.append(f'{indent}# Auto-detect single chain case\n')
-        new_lines.append(f'{indent}if pdb_target_ids is None and args.input_type == "pdb":\n')
-        new_lines.append(f'{indent}    try:\n')
-        new_lines.append(f'{indent}        from boltzdesign.input_utils import get_chains_sequence\n')
-        new_lines.append(f'{indent}        chain_sequences = get_chains_sequence(pdb_path)\n')
-        new_lines.append(f'{indent}        if len(chain_sequences) == 1:\n')
-        new_lines.append(f'{indent}            pdb_target_ids = list(chain_sequences.keys())\n')
-        new_lines.append(f'{indent}            print(f"Auto-detected single chain: {pdb_target_ids}")\n')
-        new_lines.append(f'{indent}    except Exception as e:\n')
-        new_lines.append(f'{indent}        print(f"Could not auto-detect chain: {{e}}")\n')
-        new_lines.append(f'{indent}        pass\n')
-        chain_detect_patched = True
+        # Look for the next 'else:' block
+        while i < len(lines) and 'else:' not in lines[i]:
+            new_lines.append(lines[i])
+            i += 1
+        if i < len(lines):
+            # Found else:
+            new_lines.append(lines[i])  # Add the else: line
+            i += 1
+            # Add the pdb_target_ids = None line
+            if i < len(lines):
+                new_lines.append(lines[i])  # Add pdb_target_ids = None
+                i += 1
+                # Now add our auto-detection code
+                indent = '    '
+                new_lines.append(f'\n')
+                new_lines.append(f'{indent}# Auto-detect single chain case\n')
+                new_lines.append(f'{indent}if pdb_target_ids is None and args.input_type == "pdb":\n')
+                new_lines.append(f'{indent}    try:\n')
+                new_lines.append(f'{indent}        from boltzdesign.input_utils import get_chains_sequence\n')
+                new_lines.append(f'{indent}        chain_sequences = get_chains_sequence(pdb_path)\n')
+                new_lines.append(f'{indent}        if len(chain_sequences) == 1:\n')
+                new_lines.append(f'{indent}            pdb_target_ids = list(chain_sequences.keys())\n')
+                new_lines.append(f'{indent}            print(f"Auto-detected single chain: {{pdb_target_ids}}")\n')
+                new_lines.append(f'{indent}    except Exception as e:\n')
+                new_lines.append(f'{indent}        print(f"Could not auto-detect chain: {{e}}")\n')
+                new_lines.append(f'{indent}        pass\n')
+                chain_detect_patched = True
         continue
     
     new_lines.append(line)
