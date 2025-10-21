@@ -120,13 +120,28 @@ class Boltz1(OriginalBoltz1):
             # First create the model instance with the hyperparameters
             print("Creating model instance...")
             from pytorch_lightning.core.saving import _load_state
+            import inspect
             
             # Get the hyperparameters and instantiate the model
-            _cls_kwargs = checkpoint.get("hyper_parameters", {})
-            _cls_kwargs.update(kwargs)
+            _cls_kwargs = checkpoint.get("hyper_parameters", {}).copy()
+            
+            # Get the accepted parameters for Boltz1.__init__
+            # Using OriginalBoltz1 to get the actual signature
+            sig = inspect.signature(OriginalBoltz1.__init__)
+            accepted_params = set(sig.parameters.keys()) - {'self'}
+            
+            # Filter hyperparameters to only include accepted ones
+            filtered_kwargs = {k: v for k, v in _cls_kwargs.items() if k in accepted_params}
+            removed_hparams = [k for k in _cls_kwargs.keys() if k not in accepted_params]
+            
+            if removed_hparams:
+                print(f"Filtered hyperparameters: removed {removed_hparams}")
+            
+            # Merge with kwargs passed to load_from_checkpoint
+            filtered_kwargs.update(kwargs)
             
             # Instantiate the model
-            model = cls(**_cls_kwargs)
+            model = cls(**filtered_kwargs)
             
             # Now manually load the state dict with strict=False and filter mismatches
             print("Loading state dict with architecture compatibility filtering...")
