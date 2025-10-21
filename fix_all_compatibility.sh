@@ -117,22 +117,45 @@ class Boltz1(OriginalBoltz1):
             tmp_path = tmp.name
         
         try:
-            # Load using the parent class method with the filtered checkpoint
-            print("Loading model with filtered parameters...")
-            # Use strict=False to handle architecture changes between versions
-            print("Note: Using strict=False to handle architecture differences")
+            # First create the model instance with the hyperparameters
+            print("Creating model instance...")
+            from pytorch_lightning.core.saving import _load_state
             
-            # Override strict parameter - force it to False regardless of what was passed
-            actual_strict = False
+            # Get the hyperparameters and instantiate the model
+            _cls_kwargs = checkpoint.get("hyper_parameters", {})
+            _cls_kwargs.update(kwargs)
             
-            model = super(Boltz1, cls).load_from_checkpoint(
-                tmp_path,
-                map_location=map_location,
-                hparams_file=hparams_file,
-                strict=actual_strict,  # Force False to allow mismatched layers
-                **kwargs
-            )
-            print("✓ Model loaded successfully")
+            # Instantiate the model
+            model = cls(**_cls_kwargs)
+            
+            # Now manually load the state dict with strict=False and filter mismatches
+            print("Loading state dict with architecture compatibility filtering...")
+            state_dict = checkpoint["state_dict"]
+            model_state = model.state_dict()
+            
+            # Filter state_dict to only include keys that match in size
+            filtered_state = {}
+            skipped_keys = []
+            
+            for key, value in state_dict.items():
+                if key in model_state:
+                    if value.shape == model_state[key].shape:
+                        filtered_state[key] = value
+                    else:
+                        skipped_keys.append(f"{key}: checkpoint={value.shape} vs model={model_state[key].shape}")
+                else:
+                    skipped_keys.append(f"{key}: not in model")
+            
+            if skipped_keys:
+                print(f"Skipped {len(skipped_keys)} mismatched/missing keys:")
+                for sk in skipped_keys[:5]:  # Show first 5
+                    print(f"  - {sk}")
+                if len(skipped_keys) > 5:
+                    print(f"  ... and {len(skipped_keys) - 5} more")
+            
+            # Load the filtered state dict
+            missing, unexpected = model.load_state_dict(filtered_state, strict=False)
+            print(f"✓ Model loaded successfully (loaded {len(filtered_state)}/{len(state_dict)} keys)")
         finally:
             # Clean up temporary file
             if os.path.exists(tmp_path):
