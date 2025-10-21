@@ -1,0 +1,40 @@
+# Python requirements for BoltzDesign1 on Linux with GPU
+# Install with: pip install -r requirements_linux.txt
+
+# PyTorch with CUDA 12.1 support (for A100)
+# Install separately with: pip install torch==2.5.1 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# PyTorch Lightning
+pytorch-lightning>=2.0.0
+
+# Core scientific computing
+numpy>=1.21.0
+scipy>=1.7.0
+pandas>=1.3.0
+
+# Visualization
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Utilities
+tqdm>=4.62.0
+pyyaml>=5.4.0
+requests>=2.26.0
+
+# Biology/Chemistry
+biopython>=1.79
+rdkit>=2022.03.1
+pypdb>=2.0
+
+# Molecular visualization
+py3Dmol>=1.8.0
+
+# Interactive Python
+ipython>=7.28.0
+
+# Additional utilities
+pathlib2>=2.3.6
+cloudpickle>=2.0.0
+
+# Note: boltz will be installed from source via setup script
+# Note: BoltzDesign1 will be cloned via setup script

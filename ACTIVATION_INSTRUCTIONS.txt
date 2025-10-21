@@ -1,0 +1,23 @@
+
+============================================================
+🎉 Setup Complete!
+============================================================
+
+To activate the environment:
+
+Windows (PowerShell):
+    .\boltz_venv\Scripts\Activate.ps1
+
+Windows (Command Prompt):
+    boltz_venv\Scripts\activate.bat
+
+Linux/Mac:
+    source boltz_venv/bin/activate
+
+After activation, you can run:
+    python run_binder_generation.py
+
+To deactivate:
+    deactivate
+
+============================================================
