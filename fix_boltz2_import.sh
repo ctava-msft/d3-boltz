@@ -34,22 +34,34 @@ class Boltz1(OriginalBoltz1):
         # Load the checkpoint
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
         
-        # Filter incompatible embedder_args parameters
-        if 'hyper_parameters' in checkpoint and 'embedder_args' in checkpoint['hyper_parameters']:
-            embedder_args = checkpoint['hyper_parameters']['embedder_args']
+        # Filter incompatible parameters
+        if 'hyper_parameters' in checkpoint:
+            hp = checkpoint['hyper_parameters']
             
-            # List of deprecated parameters to remove
-            deprecated_params = [
-                'add_mol_type_feat',
-                'add_method_conditioning', 
-                'add_modified_flag',
-                'add_cyclic_flag'
-            ]
+            # Filter embedder_args
+            if 'embedder_args' in hp:
+                embedder_args = hp['embedder_args']
+                deprecated_embedder = [
+                    'add_mol_type_feat',
+                    'add_method_conditioning', 
+                    'add_modified_flag',
+                    'add_cyclic_flag'
+                ]
+                filtered_embedder = {k: v for k, v in embedder_args.items() if k not in deprecated_embedder}
+                hp['embedder_args'] = filtered_embedder
+                if len(embedder_args) != len(filtered_embedder):
+                    print(f"Filtered embedder_args: removed {len(embedder_args) - len(filtered_embedder)} deprecated parameters")
             
-            filtered_args = {k: v for k, v in embedder_args.items() if k not in deprecated_params}
-            checkpoint['hyper_parameters']['embedder_args'] = filtered_args
-            
-            print(f"Filtered embedder_args: removed {len(embedder_args) - len(filtered_args)} deprecated parameters")
+            # Filter confidence_args
+            if 'confidence_args' in hp:
+                confidence_args = hp['confidence_args']
+                deprecated_confidence = [
+                    'use_gaussian'
+                ]
+                filtered_confidence = {k: v for k, v in confidence_args.items() if k not in deprecated_confidence}
+                hp['confidence_args'] = filtered_confidence
+                if len(confidence_args) != len(filtered_confidence):
+                    print(f"Filtered confidence_args: removed {len(confidence_args) - len(filtered_confidence)} deprecated parameters")
         
         # Save the filtered checkpoint temporarily
         import tempfile
