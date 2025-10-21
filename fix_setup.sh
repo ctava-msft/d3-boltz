@@ -22,6 +22,48 @@ fi
 source boltz_venv/bin/activate
 echo "✓ Virtual environment activated"
 
+# Check if Boltz is installed
+if ! python3 -c "import boltz" 2>/dev/null; then
+    echo "Boltz not found. Installing Boltz..."
+    
+    # Check for GPU
+    if command -v nvidia-smi &> /dev/null; then
+        echo "GPU detected. Installing PyTorch with CUDA 12.1..."
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    else
+        echo "No GPU detected. Installing PyTorch for CPU..."
+        pip install torch torchvision torchaudio
+    fi
+    
+    # Install other dependencies
+    echo "Installing dependencies..."
+    pip install pytorch-lightning biopython rdkit numpy pandas scipy matplotlib seaborn \
+                tqdm pyyaml requests pypdb py3Dmol ipython
+    
+    # Clone and install Boltz
+    if [ ! -d "boltz-main" ]; then
+        echo "Downloading Boltz..."
+        wget -q https://github.com/jwohlwend/boltz/archive/refs/heads/main.zip
+        unzip -q main.zip
+        rm main.zip
+        echo "✓ Boltz downloaded"
+    fi
+    
+    echo "Installing Boltz..."
+    cd boltz-main
+    pip install -e .
+    cd ..
+    echo "✓ Boltz installed"
+    
+    # Download model weights
+    echo "Downloading Boltz model weights (~2GB)..."
+    mkdir -p ~/.boltz
+    wget -q -O ~/.boltz/boltz1.ckpt https://storage.googleapis.com/boltz-public/boltz1.ckpt
+    echo "✓ Model weights downloaded"
+else
+    echo "✓ Boltz is installed"
+fi
+
 # Clone BoltzDesign1 if not present
 if [ ! -d "BoltzDesign1" ]; then
     echo "Cloning BoltzDesign1 repository..."
