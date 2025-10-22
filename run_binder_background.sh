@@ -10,6 +10,7 @@ DESIGN_SAMPLES="${DESIGN_SAMPLES:-2}"
 LENGTH_MIN="${LENGTH_MIN:-100}"
 LENGTH_MAX="${LENGTH_MAX:-150}"
 TARGET_TYPE="${TARGET_TYPE:-protein}"
+PDB_TARGET_IDS="${PDB_TARGET_IDS:-A}"  # Default to chain A
 
 # Create log directory
 LOG_DIR="logs"
@@ -28,6 +29,7 @@ echo "Target name: $TARGET_NAME"
 echo "Design samples: $DESIGN_SAMPLES"
 echo "Length range: $LENGTH_MIN - $LENGTH_MAX residues"
 echo "Target type: $TARGET_TYPE"
+echo "Target chain IDs: $PDB_TARGET_IDS"
 echo ""
 echo "Log file: $LOG_FILE"
 echo "Nohup output: $NOHUP_FILE"
@@ -67,6 +69,7 @@ python3 boltzdesign.py \
     --input_type pdb \
     --pdb_path "../__INPUT_PDB__" \
     --target_type "__TARGET_TYPE__" \
+    --pdb_target_ids "__PDB_TARGET_IDS__" \
     --design_samples __DESIGN_SAMPLES__ \
     --length_min __LENGTH_MIN__ \
     --length_max __LENGTH_MAX__
@@ -77,6 +80,7 @@ EOFWRAPPER
 sed -i "s|__TARGET_NAME__|$TARGET_NAME|g" "$WRAPPER_SCRIPT"
 sed -i "s|__INPUT_PDB__|$INPUT_PDB|g" "$WRAPPER_SCRIPT"
 sed -i "s|__TARGET_TYPE__|$TARGET_TYPE|g" "$WRAPPER_SCRIPT"
+sed -i "s|__PDB_TARGET_IDS__|$PDB_TARGET_IDS|g" "$WRAPPER_SCRIPT"
 sed -i "s|__DESIGN_SAMPLES__|$DESIGN_SAMPLES|g" "$WRAPPER_SCRIPT"
 sed -i "s|__LENGTH_MIN__|$LENGTH_MIN|g" "$WRAPPER_SCRIPT"
 sed -i "s|__LENGTH_MAX__|$LENGTH_MAX|g" "$WRAPPER_SCRIPT"

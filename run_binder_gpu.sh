@@ -10,6 +10,7 @@ DESIGN_SAMPLES="${DESIGN_SAMPLES:-2}"
 LENGTH_MIN="${LENGTH_MIN:-100}"
 LENGTH_MAX="${LENGTH_MAX:-150}"
 TARGET_TYPE="${TARGET_TYPE:-protein}"
+PDB_TARGET_IDS="${PDB_TARGET_IDS:-A}"  # Default to chain A, override with PDB_TARGET_IDS=B or pass --pdb_target_ids
 
 # Activate virtual environment
 if [ ! -d "boltz_venv" ]; then
@@ -48,6 +49,7 @@ echo "Target name: $TARGET_NAME"
 echo "Design samples: $DESIGN_SAMPLES"
 echo "Length range: $LENGTH_MIN - $LENGTH_MAX residues"
 echo "Target type: $TARGET_TYPE"
+echo "Target chain IDs: $PDB_TARGET_IDS"
 echo ""
 
 # Create log directory
@@ -75,6 +77,7 @@ python3 boltzdesign.py \
     --input_type pdb \
     --pdb_path "../$INPUT_PDB" \
     --target_type "$TARGET_TYPE" \
+    --pdb_target_ids "$PDB_TARGET_IDS" \
     --design_samples "$DESIGN_SAMPLES" \
     --length_min "$LENGTH_MIN" \
     --length_max "$LENGTH_MAX" \
